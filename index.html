@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Subtitle Extractor</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎬</text></svg>">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            font-weight: 700;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input[type="url"] {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input[type="url"]:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 150px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 8px 20px rgba(40, 167, 69, 0.3);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+            font-weight: 600;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .result-section {
+            margin-top: 30px;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #e8f4f8;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .video-info {
+            flex: 1;
+            margin: 0;
+        }
+
+        .copy-container {
+            display: flex;
+            flex-direction: row;
+            justify-content: right;
+            gap: 10px;
+        }
+
+        .copy-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+        }
+
+        .copy-btn:hover {
+            background: #218838;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+        }
+
+        .copy-btn:active {
+            transform: translateY(0);
+        }
+
+        .transcript-box {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 25px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #333;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin-bottom: 20px;
+        }
+
+        .transcript-box::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .transcript-box::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .transcript-box::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 10px;
+        }
+
+        .key-points-section {
+            margin-top: 30px;
+            padding: 25px;
+            background: rgba(40, 167, 69, 0.05);
+            border-radius: 15px;
+            border: 2px solid rgba(40, 167, 69, 0.1);
+        }
+
+        .key-points-section h3 {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .model-selection {
+            margin-bottom: 20px;
+        }
+
+        .model-selection label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .model-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .model-select:focus {
+            border-color: #28a745;
+            box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+        }
+
+        .key-points-box {
+            background: #f8fff8;
+            border: 1px solid #d4edda;
+            border-radius: 15px;
+            padding: 25px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #333;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin-top: 20px;
+        }
+
+        .key-points-box::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .key-points-box::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .key-points-box::-webkit-scrollbar-thumb {
+            background: #28a745;
+            border-radius: 10px;
+        }
+
+        #keyPointsBox ol,
+        ul {
+            padding-left: 1em;
+            /* or 2em for more space */
+            margin: 0;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #fcc;
+        }
+
+        .success {
+            background: #efe;
+            color: #363;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #cfc;
+        }
+
+        .video-info {
+            background: #e8f4f8;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .language-section {
+            margin-top: 25px;
+            padding: 25px;
+            background: rgba(102, 126, 234, 0.05);
+            border-radius: 15px;
+            border: 2px solid rgba(102, 126, 234, 0.1);
+        }
+
+        .language-section h3 {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 1.3em;
+        }
+
+        .language-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .language-option {
+            padding: 12px 16px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .language-option:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .language-option.selected {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+
+        .language-option input[type="radio"] {
+            margin: 0;
+            width: 16px;
+            height: 16px;
+        }
+
+        .language-info {
+            flex: 1;
+        }
+
+        .language-name {
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .language-details {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .language-badge {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-left: 5px;
+        }
+
+        .language-option.selected .language-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .extract-section {
+            text-align: center;
+            padding-top: 15px;
+            border-top: 1px solid rgba(102, 126, 234, 0.1);
+        }
+
+        .two-column {
+            /* display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px; */
+            margin-top: 20px;
+        }
+
+        .column-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .column-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .keypoints-header {
+            margin-top: 20px
+        }
+
+        code {
+            font-family: monospace;
+            background-color: #f0f0f0;
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #d63384;
+        }
+
+        @media (max-width: 900px) {
+            .two-column {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .result-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: stretch;
+            }
+
+            .copy-container {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .copy-btn {
+                align-self: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎬 YouTube Subtitle Extractor</h1>
+
+        <div class="input-section">
+            <div class="input-group">
+                <input type="url" id="urlInput" placeholder="Enter YouTube URL here..." />
+                <button class="btn" onclick="checkLanguages()">Check Languages</button>
+            </div>
+            <div class="example">
+                Example: https://www.youtube.com/watch?v=dQw4w9WgXcQ
+            </div>
+
+            <div class="language-section" id="languageSection" style="display: none;">
+                <h3>🌐 Available Subtitle Languages:</h3>
+                <div class="language-grid" id="languageGrid"></div>
+                <div class="extract-section">
+                    <button class="btn" onclick="extractSubtitles()">Extract Subtitles</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="result-section" id="resultSection" style="display: none;">
+            <div class="video-info" id="videoInfo"></div>
+
+            <div class="two-column">
+                <div class="transcript-column">
+                    <div class="column-header">
+                        <div class="column-title">📝 Transcript</div>
+                        <button class="copy-btn" onclick="copyTranscript()">
+                            <span>📋</span>
+                            <span>Copy Transcript</span>
+                        </button>
+                    </div>
+                    <div class="transcript-box" id="transcriptBox"></div>
+                </div>
+
+                <div class="key-points-column">
+
+                    <div class="key-points-section">
+                        <div class="model-selection">
+                            <label for="modelSelect">Choose AI Model:</label>
+                            <select id="modelSelect" class="model-select">
+                                <option value="meta-llama/llama-4-scout-17b-16e-instruct">Llama 4 Scout 17B (Faster)
+                                </option>
+                                <option value="llama-3.3-70b-versatile">Llama 3.3 70B (More Accurate)</option>
+                            </select>
+                        </div>
+
+                        <div style="text-align: center;">
+                            <button class="btn btn-secondary" onclick="generateKeyPoints()" id="generateBtn">
+                                🧠 Generate Key Points
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="column-header keypoints-header">
+                        <div class="column-title">🔑 Key Points</div>
+                        <button class="copy-btn" onclick="copyKeyPoints()" id="copyKeyPointsBtn">
+                            <span>📋</span>
+                            <span>Copy Key Points</span>
+                        </button>
+                    </div>
+                    <div class="key-points-box" id="keyPointsBox" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <span id="loadingText">Extracting subtitles...</span>
+        </div>
+    </div>
+
+    <script>
+        let currentTranscript = '';
+        let currentKeyPoints = '';
+        let availableLanguages = [];
+        let selectedLanguage = null;
+
+        function checkLanguages() {
+            const urlInput = document.getElementById('urlInput');
+            const loading = document.getElementById('loading');
+            const loadingText = document.getElementById('loadingText');
+            const languageSection = document.getElementById('languageSection');
+            const resultSection = document.getElementById('resultSection');
+            const url = urlInput.value.trim();
+
+            if (!url) {
+                showError('Please enter a YouTube URL');
+                return;
+            }
+
+            // Show loading
+            loading.style.display = 'block';
+            loadingText.textContent = 'Checking available languages...';
+            languageSection.style.display = 'none';
+            resultSection.style.display = 'none';
+            clearMessages();
+
+            // Make API request to get available languages
+            fetch('/api/languages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ url: url })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    loading.style.display = 'none';
+
+                    if (data.success) {
+                        displayLanguages(data.languages);
+                        showSuccess('Available languages loaded successfully!');
+                    } else {
+                        showError(data.error || 'Could not retrieve available languages');
+                    }
+                })
+                .catch(error => {
+                    loading.style.display = 'none';
+                    showError('Network error: ' + error.message);
+                });
+        }
+
+        function displayLanguages(languages) {
+            availableLanguages = languages;
+            const languageSection = document.getElementById('languageSection');
+            const languageGrid = document.getElementById('languageGrid');
+
+            languageGrid.innerHTML = '';
+
+            languages.forEach((lang, index) => {
+                const langOption = document.createElement('div');
+                langOption.className = 'language-option';
+                langOption.onclick = () => selectLanguage(lang.language_code, langOption);
+
+                const badges = [];
+                if (lang.is_generated) badges.push('Auto-generated');
+                if (lang.is_translatable) badges.push('Translatable');
+
+                langOption.innerHTML = `
+                    <input type="radio" name="language" value="${lang.language_code}" ${index === 0 ? 'checked' : ''}>
+                    <div class="language-info">
+                        <div class="language-name">${lang.language} (${lang.language_code})</div>
+                        <div class="language-details">
+                            ${badges.map(badge => `<span class="language-badge">${badge}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
+
+                languageGrid.appendChild(langOption);
+            });
+
+            // Auto-select first language
+            if (languages.length > 0) {
+                selectedLanguage = languages[0].language_code;
+                languageGrid.firstChild.classList.add('selected');
+            }
+
+            languageSection.style.display = 'block';
+        }
+
+        function selectLanguage(languageCode, element) {
+            // Remove selected class from all options
+            document.querySelectorAll('.language-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+
+            // Add selected class to clicked option
+            element.classList.add('selected');
+
+            // Update radio button
+            element.querySelector('input[type="radio"]').checked = true;
+
+            selectedLanguage = languageCode;
+        }
+
+        function extractSubtitles() {
+            const urlInput = document.getElementById('urlInput');
+            const loading = document.getElementById('loading');
+            const loadingText = document.getElementById('loadingText');
+            const resultSection = document.getElementById('resultSection');
+            const url = urlInput.value.trim();
+
+            if (!url) {
+                showError('Please enter a YouTube URL');
+                return;
+            }
+
+            if (!selectedLanguage) {
+                showError('Please select a language first');
+                return;
+            }
+
+            // Show loading
+            loading.style.display = 'block';
+            loadingText.textContent = 'Extracting subtitles...';
+            resultSection.style.display = 'none';
+            clearMessages();
+
+            // Make API request
+            fetch('/api/transcript', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    url: url,
+                    language_code: selectedLanguage
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    loading.style.display = 'none';
+
+                    if (data.success) {
+                        const selectedLang = availableLanguages.find(lang => lang.language_code === selectedLanguage);
+                        showTranscript(data.transcript, data.video_id, selectedLang);
+                        showSuccess('Subtitles extracted successfully!');
+                    } else {
+                        showError(data.error || 'An error occurred');
+                    }
+                })
+                .catch(error => {
+                    loading.style.display = 'none';
+                    showError('Network error: ' + error.message);
+                });
+        }
+
+        function showTranscript(transcript, videoId, language) {
+            const resultSection = document.getElementById('resultSection');
+            const transcriptBox = document.getElementById('transcriptBox');
+            const videoInfo = document.getElementById('videoInfo');
+            const keyPointsBox = document.getElementById('keyPointsBox');
+            const keypointsHeader = document.getElementsByClassName('keypoints-header')[0];
+
+            currentTranscript = transcript;
+            currentKeyPoints = '';
+            transcriptBox.textContent = transcript;
+            videoInfo.innerHTML = `
+                <strong>Video ID:</strong> ${videoId}<br>
+                <strong>Language:</strong> ${language.language} (${language.language_code})
+                ${language.is_generated ? '<span class="language-badge">Auto-generated</span>' : ''}
+            `;
+
+            // Hide key points section and reset
+            keyPointsBox.style.display = 'none';
+            keyPointsBox.textContent = '';
+            keypointsHeader.style.display = 'none';
+
+            resultSection.style.display = 'block';
+        }
+
+        function generateKeyPoints() {
+            const loading = document.getElementById('loading');
+            const loadingText = document.getElementById('loadingText');
+            const generateBtn = document.getElementById('generateBtn');
+            const modelSelect = document.getElementById('modelSelect');
+            const keyPointsBox = document.getElementById('keyPointsBox');
+            const keypointsHeader = document.getElementsByClassName('keypoints-header')[0];
+
+            if (!currentTranscript) {
+                showError('Please extract subtitles first');
+                return;
+            }
+
+            const selectedModel = modelSelect.value;
+
+            // Show loading
+            loading.style.display = 'block';
+            loadingText.textContent = 'Generating key points...';
+            generateBtn.disabled = true;
+            clearMessages();
+
+            // Make API request
+            fetch('/api/keypoints', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    transcript: currentTranscript,
+                    model: selectedModel
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    loading.style.display = 'none';
+                    generateBtn.disabled = false;
+
+                    if (data.success) {
+                        currentKeyPoints = data.key_points;
+                        // keyPointsBox.textContent = data.key_points;
+                        keyPointsBox.innerHTML = formatKeyPointsTextToHTML(data.key_points);
+                        keyPointsBox.style.display = 'block';
+                        keypointsHeader.style.display = 'flex';
+                        showSuccessKeyPoints('Key points generated successfully!');
+                    } else {
+                        showErrorKeyPoints(data.error || 'Could not generate key points');
+                    }
+                })
+                .catch(error => {
+                    loading.style.display = 'none';
+                    generateBtn.disabled = false;
+                    showErrorKeyPoints('Network error: ' + error.message);
+                });
+        }
+
+        /**
+         * Formats key points text to HTML.
+         * - Converts **text** to <strong>text</strong>
+         * - Converts `code` to <code>code</code>
+         * - Converts numbered lists (1. item) to <ol><li>item</li></ol>
+         * - Converts bullets (- item) to <div>• item</div>
+         * - Handles indentation for nested bullets (+ item)
+         */
+        function formatKeyPointsTextToHTML(text) {
+            console.log(text);
+            const lines = text.split('\n');
+            let html = '';
+            let inList = false;
+            let prev_length = 0;
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+
+                // Ganti **text** dengan <strong>text</strong>
+                let formatted = line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+                formatted = formatted.replace(/`([^`]+?)`/g, '<code>$1</code>');
+                formatted = formatted.replace(/^\*\s/gm, '• ');
+                formatted = formatted.replace(/^\+\s(.*)$/gm, '<div style="margin-left: 15px">• $1</div>');
+
+                if (/^(?:<[^>]+>)*\d+\./.test(formatted)) {
+                    if (!inList) {
+                        html += '<ol>';
+                        inList = true;
+                    }
+
+                    html += `<li>${formatted.replace(/^((?:\s*<[^>]+>\s*)*)(\d+\.\s*)/, '$1')}</li>`;
+
+                } else if (/^-\s/.test(formatted) && inList) {
+                    const bulletContent = formatted.replace(/^-\s*/, '');
+                    html += `<div>• ${bulletContent}</div>`;
+
+                } else if (/^\+\s/.test(formatted) && inList) {
+                    const bulletContent = formatted.replace(/^\+\s*/, '');
+                    html += `<div style="margin-left: 15px">• ${bulletContent}</div>`;
+
+                } else if (formatted.length == 0 && inList) {
+                    html += `<br/>`;
+                } else if (formatted.length > 0 && inList && prev_length > 0) {
+                    html += `<p>${formatted}</p>`;
+                } else {
+                    if (inList) {
+                        html += '</ol>';
+                        inList = false;
+                    }
+
+                    if (formatted.length > 0) {
+                        html += `<p>${formatted}</p>`;
+                    }
+
+                    if (formatted.length == 0) {
+                        html += `<br/>`;
+                    }
+                }
+
+                prev_length = line.length;
+            }
+
+            if (inList) {
+                html += '</ol>';
+            }
+
+            return html;
+        }
+
+        function copyTranscript() {
+            if (currentTranscript) {
+                navigator.clipboard.writeText(currentTranscript).then(() => {
+                    Swal.fire({
+                        title: 'Success!',
+                        text: 'Transcript copied to clipboard!',
+                        icon: 'success',
+                        timer: 2000,
+                        timerProgressBar: true,
+                        showConfirmButton: false,
+                        toast: true,
+                        position: 'top-end',
+                        background: '#f0f9f0',
+                        color: '#155724',
+                        iconColor: '#28a745'
+                    });
+                }).catch(err => {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'Failed to copy transcript',
+                        icon: 'error',
+                        timer: 3000,
+                        timerProgressBar: true,
+                        showConfirmButton: false,
+                        toast: true,
+                        position: 'top-end',
+                        background: '#f8d7da',
+                        color: '#721c24',
+                        iconColor: '#dc3545'
+                    });
+                });
+            }
+        }
+
+        function copyKeyPoints() {
+            if (currentKeyPoints) {
+                navigator.clipboard.writeText(currentKeyPoints).then(() => {
+                    Swal.fire({
+                        title: 'Success!',
+                        text: 'Key points copied to clipboard!',
+                        icon: 'success',
+                        timer: 2000,
+                        timerProgressBar: true,
+                        showConfirmButton: false,
+                        toast: true,
+                        position: 'top-end',
+                        background: '#f0f9f0',
+                        color: '#155724',
+                        iconColor: '#28a745'
+                    });
+                }).catch(err => {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'Failed to copy key points',
+                        icon: 'error',
+                        timer: 3000,
+                        timerProgressBar: true,
+                        showConfirmButton: false,
+                        toast: true,
+                        position: 'top-end',
+                        background: '#f8d7da',
+                        color: '#721c24',
+                        iconColor: '#dc3545'
+                    });
+                });
+            }
+        }
+
+        function showError(message) {
+            clearMessages();
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.textContent = message;
+            document.querySelector('.input-section').appendChild(errorDiv);
+
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 5000);
+        }
+
+        function showSuccess(message) {
+            clearMessages();
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success';
+            successDiv.textContent = message;
+            document.querySelector('.input-section').appendChild(successDiv);
+
+            setTimeout(() => {
+                successDiv.remove();
+            }, 3000);
+        }
+
+        function showErrorKeyPoints(message) {
+            clearMessages();
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.textContent = message;
+            document.querySelector('.key-points-section').after(errorDiv);
+
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 5000);
+        }
+
+        function showSuccessKeyPoints(message) {
+            clearMessages();
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success';
+            successDiv.textContent = message;
+            document.querySelector('.key-points-section').after(successDiv);
+
+            setTimeout(() => {
+                successDiv.remove();
+            }, 3000);
+        }
+
+        function clearMessages() {
+            document.querySelectorAll('.error, .success').forEach(el => el.remove());
+        }
+
+        // Allow Enter key to submit
+        document.getElementById('urlInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                checkLanguages();
+            }
+        });
+    </script>
+</body>
+
+</html>
